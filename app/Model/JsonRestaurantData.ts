@@ -1,5 +1,5 @@
 import { EachRestaurant } from "./EachRestaurant";
 
 export interface JsonRestaurantData {
-	restaurants: Array<EachRestaurant>;
+	restaurants?: Array<EachRestaurant>;
 }

@@ -1,5 +1,4 @@
 import { readFileSync } from "fs";
-import { DateTime, Duration, Interval, Info, Settings } from "luxon";
 import { EachRestaurant } from "./Model/EachRestaurant";
 import { JsonRestaurantData } from "./Model/JsonRestaurantData";
 import { OpenHours } from "./Model/OpenHours";
@@ -15,32 +14,68 @@ import { convertStringTimeToNumber, mapWeekdayToInt } from "./util/helper";
  * All dates and times can be assumed to be in the same time zone.
  */
 export const getRestaurants = (jsonFilename: string) => {
-	const jsonData = <JsonRestaurantData>(
+	const jsonData = <JsonRestaurantData | undefined>(
 		JSON.parse(readFileSync(jsonFilename, "utf-8"))
 	);
-	// restrctureRestaurantsData(jsonData.restaurants);
-	// console.log(restrctureRestaurantsData(jsonData.restaurants));
-	console.log(DateTime.local(2021, 5, 10, 15, 40));
+	if (jsonData === {}) return undefined;
+
+	return restrctureRestaurantsData(jsonData.restaurants);
 };
 
 /**
  * Finds the restaurants open at the specified time.
  *
- * @param {luxon.DateTime} time
+ * @param {Date} time
+ * @param {string} jsonFilename
  * @returns {Array<string>} The names of the restaurants open at the specified
  * time. The order of the elements in this array is alphabetical.
  */
-const getRestaurantsOpenAt = (time: DateTime) => {
-	time;
-	return [];
+export const getRestaurantsOpenAt = (jsonFilename: string, time?: Date) => {
+	let mappedData: Map<string, Map<number, OpenHours>> = getRestaurants(
+		jsonFilename
+	);
+	let result = [];
+	let ampm = time.getHours() > 12 ? "pm" : "am";
+	let hourAndMinutes = convertStringTimeToNumber([
+		`${time.getHours()}:${time.getMinutes()}`,
+		ampm
+	]);
+	let weekday = time.getDay() === 0 ? 7 : time.getDay();
+
+	if (mappedData === undefined) return [];
+
+	mappedData.forEach(
+		(eachRestaurant: Map<number, OpenHours>, restaurantName: string) => {
+			//for the normal situation
+			eachRestaurant.has(weekday) &&
+				eachRestaurant.get(weekday).open <= hourAndMinutes &&
+				hourAndMinutes <= eachRestaurant.get(weekday).close &&
+				result.push(restaurantName);
+
+			// for the situation that the shop close after midnight
+			eachRestaurant.has(weekday) &&
+				eachRestaurant.get(weekday).open >
+					eachRestaurant.get(weekday).close &&
+				(eachRestaurant.get(weekday).open <= hourAndMinutes ||
+					hourAndMinutes <= eachRestaurant.get(weekday).close) &&
+				result.push(restaurantName);
+
+			//for the situation that the shop opening all day
+			eachRestaurant.has(weekday) &&
+				eachRestaurant.get(weekday).open ===
+					eachRestaurant.get(weekday).close &&
+				result.push(restaurantName);
+		}
+	);
+	return [...new Set(result)];
 };
 
 /**
  * Convert the json data into a map
  *
  *  @param {Array<EachRestaurant>} restuarantDataJson
- * @returns {Map<string, Array<string>} The well structured json data so we can
- * loop through easier
+ * @returns {Map<string,Map<number, OpenHours>>}
+ *  the restructured data arranged by seperate weekdays
  */
 const restrctureRestaurantsData = (
 	restuarantDataJson: Array<EachRestaurant>
@@ -59,8 +94,10 @@ const restrctureRestaurantsData = (
 /**
  *
  * @param {Map<string, Array<string>>} restaurantMap
- *
- *Map {
+ * @returns {Map<string,Map<number, OpenHours>>} 
+ * the restructured data arranged by seperate weekdays
+ * 
+ *result : Map {
   'Kayasa Restaurant' => Map {
     0 => { open: 8.5, close: 21 },
     1 => { open: 8.5, close: 21 },
@@ -70,39 +107,7 @@ const restrctureRestaurantsData = (
     5 => { open: 8.5, close: 21 },
     6 => { open: 8.5, close: 21 }
   },
-  'The Golden Duck' => Map {
-    0 => { open: 11, close: 23 },
-    1 => { open: 11, close: 23 },
-    2 => { open: 11, close: 23 },
-    3 => { open: 11, close: 23 },
-    4 => { open: 11, close: 23 },
-    5 => { open: 11, close: 23 },
-    6 => { open: 11, close: 23 }
-  },
-  "World's Best Steakhouse" => Map {
-    0 => { open: 11, close: 23 },
-    1 => { open: 11, close: 23 },
-    2 => { open: 11, close: 23 },
-    3 => { open: 11, close: 23 },
-    4 => { open: 11, close: 23 },
-    5 => { open: 11, close: 1 },
-    6 => { open: 24, close: 21 }
-  },
-  'Tandoori Mahal' => Map {
-    0 => { open: 11, close: 22.5 },
-    1 => { open: 11, close: 22.5 },
-    2 => { open: 11, close: 22.5 },
-    3 => { open: 11, close: 22.5 },
-    4 => { open: 11, close: 23 },
-    5 => { open: 11.5, close: 23 },
-    6 => { open: 16.5, close: 22.5 }
-  },
-  'Coffee and Bagels' => Map {
-    3 => { open: 11.5, close: 16 },
-    4 => { open: 11.5, close: 16 },
-    5 => { open: 11.5, close: 16 },
-    6 => { open: 11.5, close: 16 }
-  }
+  ...
 }
  */
 const divideOpenTimeToSevenDays = (

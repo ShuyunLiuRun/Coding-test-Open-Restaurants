@@ -1,11 +1,11 @@
 export const mapWeekdayToInt = {
-	"Mon": 0,
-	"Tus": 1,
-	"Wen": 2,
-	"Thu": 3,
-	"Fri": 4,
-	"Sat": 5,
-	"Sun": 6
+	"Mon": 1,
+	"Tus": 2,
+	"Wed": 3,
+	"Thu": 4,
+	"Fri": 5,
+	"Sat": 6,
+	"Sun": 7
 };
 
 /**
@@ -19,8 +19,21 @@ export const convertStringTimeToNumber = (time: Array<string>) => {
 		? (result = +time[0].split(":")[0] + +time[0].split(":")[1] / 60)
 		: (result = +time[0]);
 
-	if (time[1] === "pm") {
+	if (time[1] === "pm" && time[0] !== "12") {
 		result += 12;
+	}
+	if (
+		(time[0] === "12" ||
+			time[0] === "0" ||
+			time[0] === "0:0" ||
+			time[0] === "00" ||
+			time[0] === "00:00") &&
+		time[1] === "am"
+	) {
+		result = 24;
+	}
+	if ((time[0] === "12:30" || time[0] === "0:30") && time[1] === "am") {
+		result = 24.5;
 	}
 
 	return result;
