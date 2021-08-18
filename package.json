@@ -1,0 +1,27 @@
+{
+	"name": "open-restaurants",
+	"description": "HeartLab Coding Test",
+	"version": "1.0.0",
+	"author": "HeartLab Ltd.",
+	"license": "UNLICENSED",
+	"dependencies": {
+		"chai": "^4.3.4",
+		"mocha": "^8.4.0",
+		"luxon": "^1.26.0"
+	},
+	"engines": {
+		"node": ">= 12"
+	},
+	"scripts": {
+		"test": "mocha -r ts-node/register test/**/*_test.ts"
+	},
+	"devDependencies": {
+		"@types/chai": "^4.2.21",
+		"@types/mocha": "^9.0.0",
+		"@types/node": "^16.6.1",
+		"prettier": "2.3.2",
+		"ts-node": "^10.2.0",
+		"typescript": "^4.3.5",
+		"typings": "^2.1.1"
+	}
+}
